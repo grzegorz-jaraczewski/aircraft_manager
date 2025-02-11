@@ -1,16 +1,17 @@
 # Third party imports
 import os
+from typing import Callable, Generator
+
 import pytest
 from dotenv import load_dotenv
-from typing import Generator, Callable
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, StaticPool
-from sqlalchemy.orm import sessionmaker, Session, scoped_session
+from sqlalchemy import StaticPool, create_engine
+from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
 # Internal imports
-from src.models import Base, Aircraft, AircraftData, AircraftType
-from src.schemas import AircraftUpdateSchema, AircraftDisplaySchema
+from src.models import Aircraft, AircraftData, AircraftType, Base
+from src.schemas import AircraftDisplaySchema, AircraftUpdateSchema
 
 load_dotenv(r"C:\PyCharm\Aircraft_Manager\src\.env.testing")
 
@@ -20,6 +21,7 @@ engine = create_engine(
     poolclass=StaticPool)
 
 Local_session = scoped_session(sessionmaker(bind=engine))
+
 
 @pytest.fixture
 def db_session() -> Generator[Session, None, None]:
@@ -95,8 +97,8 @@ def app(override_get_db: Callable) -> FastAPI:
     Arguments:
         override_get_db {Callable} -- Function that returns database session object.
     """
-    from src.main import app
     from src.config.database import get_db
+    from src.main import app
 
     app.dependency_overrides[get_db] = override_get_db
 
@@ -104,7 +106,7 @@ def app(override_get_db: Callable) -> FastAPI:
 
 
 @pytest.fixture
-def client(app: FastAPI, load_data) -> Generator[TestClient, None, None]:
+def client(app: FastAPI) -> Generator[TestClient, None, None]:
     """
     Yields FastAPI client.
 

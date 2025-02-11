@@ -1,12 +1,15 @@
 # Third party imports
-import pytest
 import asyncio
 
+import pytest
+
 # Internal imports
-from src.schemas import InputAircraftPerformanceRangeSchema, OutputAircraftPerformanceRangeSchema, \
-    InputAircraftPerformanceEnduranceSchema, OutputAircraftPerformanceEnduranceSchema
+from src.schemas import (InputAircraftPerformanceEnduranceSchema,
+                         InputAircraftPerformanceRangeSchema,
+                         OutputAircraftPerformanceEnduranceSchema,
+                         OutputAircraftPerformanceRangeSchema)
 from src.use_cases.performance import Performance
-from tests.conftest import load_data, db_session
+from tests.conftest import db_session, load_data
 
 
 class TestPerformance:
