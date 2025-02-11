@@ -1,16 +1,17 @@
 # Third party imports
-import os
-import uvicorn
 import logging
+import os
+from contextlib import asynccontextmanager
+
+import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-from dotenv import load_dotenv
 
 # Internal imports
-from src.utils.init_db import create_tables
-from src.router.api import router as router_aircraft
 from src.config.database import engine
+from src.router.api import router as router_aircraft
+from src.utils.init_db import create_tables
 
 load_dotenv(".env")
 

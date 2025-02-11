@@ -1,14 +1,16 @@
 # Third party imports
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 # Internal imports
 from src.config.database import get_db
-from src.schemas import (AircraftBaseSchema, AircraftUpdateSchema, AircraftDisplaySchema,
-                                          InputAircraftPerformanceRangeSchema, OutputAircraftPerformanceRangeSchema,
-                                          InputAircraftPerformanceEnduranceSchema,
-                                          OutputAircraftPerformanceEnduranceSchema)
 from src.repository import AircraftRepository
+from src.schemas import (AircraftBaseSchema, AircraftDisplaySchema,
+                         AircraftUpdateSchema,
+                         InputAircraftPerformanceEnduranceSchema,
+                         InputAircraftPerformanceRangeSchema,
+                         OutputAircraftPerformanceEnduranceSchema,
+                         OutputAircraftPerformanceRangeSchema)
 from src.use_cases.performance import Performance
 
 router = APIRouter(prefix="/aircrafts")
@@ -87,9 +89,12 @@ def remove_aircraft(aircraft_id: int, session: Session = Depends(get_db)):
     Returns:
         dict -- confirmation message that Aircraft object was deleted.
     """
-    aircraft_repo = AircraftRepository(session)
-    aircraft_repo.delete_aircraft(aircraft_id)
-    return {"message": "Aircraft deleted."}
+    try:
+        aircraft_repo = AircraftRepository(session)
+        aircraft_repo.delete_aircraft(aircraft_id)
+        return {"message": "Aircraft deleted."}
+    except ValueError as err:
+        raise HTTPException(status_code=404, detail=str(err))
 
 
 @router.get(

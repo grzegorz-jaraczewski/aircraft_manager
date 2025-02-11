@@ -1,15 +1,15 @@
 # Third party imports
 import logging
-from sqlalchemy import select, exists
+from typing import Dict, List
+
+from sqlalchemy import exists, select
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy.exc import NoResultFound, IntegrityError
-from typing import List, Dict
 
 # Internal imports
-from src.schemas import AircraftBaseSchema, AircraftUpdateSchema, AircraftDisplaySchema, \
-    AircraftDataUpdateSchema
 from src.models import Aircraft, AircraftData
-from tests.conftest import to_schema
+from src.schemas import (AircraftBaseSchema, AircraftDataUpdateSchema,
+                         AircraftDisplaySchema, AircraftUpdateSchema)
 
 logger = logging.getLogger(__name__)
 
