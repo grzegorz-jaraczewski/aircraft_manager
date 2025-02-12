@@ -5,8 +5,9 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
+from pydantic_settings import BaseSettings
 
 # Internal imports
 from src.config.database import engine
@@ -19,12 +20,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def load_config():
-    return {
-        "host": os.getenv("HOST", "127.0.0.1"),
-        "port": int(os.getenv("PORT", 8000)),
-        "reload": os.getenv("RELOAD", True),
-    }
+class BaseConfig(BaseSettings):
+    HOST: str = os.getenv("HOST")
+    PORT: int = os.getenv("PORT")
+    RELOAD: bool = os.getenv("RELOAD")
 
 
 @asynccontextmanager
@@ -62,7 +61,7 @@ async def health_check() -> JSONResponse:
                 "status": "UNHEALTHY",
                 "database": db_status
             },
-            status_code=503
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE
         )
 
     return JSONResponse(
@@ -70,13 +69,13 @@ async def health_check() -> JSONResponse:
             "status": "HEALTHY",
             "database": db_status
         },
-        status_code=200
+        status_code=status.HTTP_200_OK
     )
 
 app.include_router(router_aircraft)
 
 
 if __name__ == "__main__":
-    config = load_config()
-    logger.info(f"Starting server on {config['host']}:{config['port']}")
-    uvicorn.run(app="main:app", host=config["host"], port=config["port"], reload=config["reload"])
+    base_config = BaseConfig()
+    logger.info(f"Starting server on {base_config.HOST}:{base_config.PORT}")
+    uvicorn.run(app="main:app", host=base_config.HOST, port=base_config.PORT, reload=base_config.RELOAD)
