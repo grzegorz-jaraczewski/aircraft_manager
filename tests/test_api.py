@@ -114,6 +114,7 @@ def test_input_aircraft(client: TestClient, load_data, db_session, new_aircraft_
 
     Arguments:
         client {TestClient} -- fastapi.testclient object,
+        load_data {Callable} -- Function that creates database and loads data into database,
         db_session {sqlalchemy.orm.session} -- database session,
         new_aircraft {AircraftBaseSchema} -- AircraftBaseSchema object.
 
@@ -140,6 +141,7 @@ def test_modify_aircraft(client: TestClient, load_data, db_session, update_aircr
 
     Arguments:
         client {TestClient} -- fastapi.testclient object,
+        load_data {Callable} -- Function that creates database and loads data into database,
         db_session {sqlalchemy.orm.session} -- database session,
         update_aircraft {AircraftBaseSchema} -- pytest fixture with updated aircraft object,
         aircraft_id {int} -- aircraft id.
@@ -197,7 +199,7 @@ def test_modify_aircraft_2(client: TestClient, load_data, db_session):
     assert data["aircraft_data"]["cruise_speed"] == 190
 
 
-def test_remove_aircraft(client: TestClient, load_data, db_session, aircraft_id=100):
+def test_remove_aircraft(client: TestClient, load_data, db_session):
     """Tests 'remove_aircraft' endpoint of the application. This test verifies if the client is removing pointed
     aircraft object from the database.
 
@@ -209,16 +211,18 @@ def test_remove_aircraft(client: TestClient, load_data, db_session, aircraft_id=
     Expected behaviour:
         remove_aircraft() -> Aircraft object is None.
     """
+    aircraft_id = 100
+
     response = client.delete(
         url=f"/aircrafts/delete_aircraft/{aircraft_id}"
     )
 
     assert response.status_code == 204
 
-    data = db_session.query(Aircraft).filter_by(aircraft_id=100).first()
+    data = db_session.query(Aircraft).filter_by(aircraft_id=aircraft_id).first()
     assert data is None
 
     response = client.delete(
-        url=f"/aircrafts/delete_aircraft/{200}"
+        url=f"/aircrafts/delete_aircraft/{aircraft_id}"
     )
     assert response.status_code == 404

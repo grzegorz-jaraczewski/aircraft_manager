@@ -111,8 +111,7 @@ def client(app: FastAPI) -> Generator[TestClient, None, None]:
     Yields FastAPI client.
 
     Arguments:
-        app {FastAPI} -- FastAPI application,
-        load_data {Callable} -- Function that creates database and loads data into database.
+        app {FastAPI} -- FastAPI application.
     """
     with TestClient(app=app, base_url="http://test") as test_client:
         yield test_client
