@@ -2,12 +2,15 @@
 import asyncio
 
 import pytest
+from unittest.mock import patch, Mock
+from sqlalchemy.orm import Session
 
 # Internal imports
 from src.schemas import (InputAircraftPerformanceEnduranceSchema,
                          InputAircraftPerformanceRangeSchema,
                          OutputAircraftPerformanceEnduranceSchema,
                          OutputAircraftPerformanceRangeSchema)
+from src.models import Aircraft, AircraftData
 from src.use_cases.performance import Performance
 from tests.conftest import db_session, load_data
 
@@ -15,9 +18,10 @@ from tests.conftest import db_session, load_data
 class TestPerformance:
 
     @pytest.fixture
-    def mock_input_aircraft_performance_range_schema(self, mocker):
-        return mocker.patch('src.schemas.InputAircraftPerformanceRangeSchema',
-                            InputAircraftPerformanceRangeSchema(aircraft_id=100, wind_speed=10.0, fuel=60.0))
+    @patch('src.schemas.InputAircraftPerformanceRangeSchema')
+    def mock_input_aircraft_performance_range_schema(self, mock_schema):
+        mock_schema.return_value = InputAircraftPerformanceRangeSchema(aircraft_id=100, wind_speed=10.0, fuel=60.0)
+        return mock_schema.return_value
 
     @pytest.fixture
     def mock_output_aircraft_performance_range_schema(self, mocker):
@@ -36,7 +40,6 @@ class TestPerformance:
 
     def test_calculate_range(self, mock_input_aircraft_performance_range_schema,
                              mock_output_aircraft_performance_range_schema, load_data, db_session):
-
         output = Performance(db_session).calculate_range(
             input_data=mock_input_aircraft_performance_range_schema)
 
@@ -46,9 +49,29 @@ class TestPerformance:
         assert output.name == 'C-152'
         assert output.range == 800.0
 
+    def test_calculate_range_2(self, mock_input_aircraft_performance_range_schema):
+        self.mock_session = Mock(spec=Session)
+        self.performance = Performance(self.mock_session)
+
+        mock_aircraft = Mock(spec=Aircraft)
+        mock_aircraft.name = 'C-152'
+
+        mock_aircraft_data = Mock(spec=AircraftData)
+        mock_aircraft_data.cruise_speed = 190
+        mock_aircraft_data.fuel_consumption = 15
+
+        self.mock_session.query.return_value.filter_by.return_value.first.side_effect = [mock_aircraft,
+                                                                                         mock_aircraft_data]
+        result = self.performance.calculate_range(mock_input_aircraft_performance_range_schema)
+
+        expected_range = ((190 + 10) * 60) / 15
+
+        assert isinstance(result, OutputAircraftPerformanceRangeSchema)
+        assert result.name == 'C-152'
+        assert result.range == expected_range
+
     def test_calculate_endurance(self, mock_input_aircraft_performance_endurance_schema,
                                  mock_output_aircraft_performance_endurance_schema, load_data, db_session):
-
         output = Performance(db_session).calculate_endurance(
             input_data=mock_input_aircraft_performance_endurance_schema)
 
