@@ -50,8 +50,8 @@ class TestPerformance:
         assert output.range == 800.0
 
     def test_calculate_range_2(self, mock_input_aircraft_performance_range_schema):
-        self.mock_session = Mock(spec=Session)
-        self.performance = Performance(self.mock_session)
+        mock_session = Mock(spec=Session)
+        performance = Performance(mock_session)
 
         mock_aircraft = Mock(spec=Aircraft)
         mock_aircraft.name = 'C-152'
@@ -60,9 +60,9 @@ class TestPerformance:
         mock_aircraft_data.cruise_speed = 190
         mock_aircraft_data.fuel_consumption = 15
 
-        self.mock_session.query.return_value.filter_by.return_value.first.side_effect = [mock_aircraft,
-                                                                                         mock_aircraft_data]
-        result = self.performance.calculate_range(mock_input_aircraft_performance_range_schema)
+        mock_session.query.return_value.filter_by.return_value.first.side_effect = [mock_aircraft,
+                                                                                    mock_aircraft_data]
+        result = performance.calculate_range(mock_input_aircraft_performance_range_schema)
 
         expected_range = ((190 + 10) * 60) / 15
 
@@ -80,3 +80,22 @@ class TestPerformance:
         assert output == expected_output
         assert output.name == 'C-152'
         assert output.endurance == '04:00'
+
+    def test_calculate_endurance_2(self, mock_input_aircraft_performance_endurance_schema):
+        mock_session = Mock(spec=Session)
+        performance = Performance(mock_session)
+
+        mock_aircraft = Mock(spec=Aircraft)
+        mock_aircraft.name = 'C-152'
+
+        mock_aircraft_data = Mock(spec=AircraftData)
+        mock_aircraft_data.fuel_consumption = 15
+
+        mock_session.query.return_value.filter_by.return_value.first.side_effect = [
+            mock_aircraft, mock_aircraft_data]
+
+        result = performance.calculate_endurance(input_data=mock_input_aircraft_performance_endurance_schema)
+
+        assert isinstance(result, OutputAircraftPerformanceEnduranceSchema)
+        assert result.name == 'C-152'
+        assert result.endurance == '04:00'
