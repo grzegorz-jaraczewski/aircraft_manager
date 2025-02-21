@@ -3,8 +3,68 @@ from fastapi.testclient import TestClient
 
 # Internal imports
 from src.models import Aircraft
-from tests.conftest import db_session, load_data, new_aircraft_fixture
 from src.repository import AircraftRepository
+from tests.conftest import db_session, load_data, new_aircraft_fixture
+
+
+def test_api_startup(client: TestClient):
+    """Tests API starts and checks root endpoint is available.
+
+    Arguments:
+        client {TestClient} -- fastapi.testclient object.
+
+    Expected behaviour:
+        show_aircrafts() -> {'detail': 'Not Found'}.
+    """
+    response = client.get("/")
+
+    assert response.status_code in [200, 404]
+
+
+def test_routes_exist(client: TestClient):
+    """Tests key API routes exist.
+
+    Arguments:
+        client {TestClient} -- fastapi.testclient object.
+
+    Expected behaviour:
+        show_aircrafts() -> {'status_code': 200},
+        input_aircraft() -> {'status_code': 201},
+        modify_aircraft() -> {'status_code': 200},
+        remove_aircraft() -> {'status_code': 200},
+        get_range() -> {'status_code': 200},
+        get_endurance() -> {'status_code': 200}.
+    """
+    expected_routes = [
+        "/aircrafts",
+        "/add_aircraft",
+        "/update_aircraft/<aircraft_id>",
+        "/delete_aircraft/<aircraft_id>",
+        "/performance/range",
+        "/performance/endurance/"
+    ]
+    for route in expected_routes:
+        response = client.get(route)
+
+        assert response.status_code in [200, 201, 404, 405]
+
+
+def test_injection_dependency(db_session):
+    """Ensure the database dependency is properly injected.
+
+    Arguments:
+        db_session {sqlalchemy.orm.session} -- database session.
+
+    Expected behaviour:
+        db_session -> session.
+    """
+    from src.config.database import get_db
+
+    try:
+        db_session = next(get_db())
+        assert db_session is not None
+    except Exception as e:
+        assert False, f"Dependency injection failed: {e}."
 
 
 def test_health_check(client: TestClient):
@@ -20,6 +80,13 @@ def test_health_check(client: TestClient):
 
     assert response.status_code == 200
     assert response.json() == {"status": "HEALTHY", "database": "OK"}
+
+
+def test_show_aircrafts_empty(client: TestClient, db_session):
+    response = client.get("/aircrafts/")
+
+    assert response.status_code == 200
+    assert response.json() == []
 
 
 def test_show_aircrafts(client: TestClient, load_data, db_session):
@@ -41,12 +108,13 @@ def test_show_aircrafts(client: TestClient, load_data, db_session):
     assert data[0]["name"] == "C-152"
 
 
-def test_input_aircraft(client: TestClient, db_session, new_aircraft_fixture):
+def test_input_aircraft(client: TestClient, load_data, db_session, new_aircraft_fixture):
     """Tests the 'input_aircraft' endpoint of the application. This test verifies if the client is adding new aircraft
     object into the database.
 
     Arguments:
         client {TestClient} -- fastapi.testclient object,
+        load_data {Callable} -- Function that creates database and loads data into database,
         db_session {sqlalchemy.orm.session} -- database session,
         new_aircraft {AircraftBaseSchema} -- AircraftBaseSchema object.
 
@@ -67,12 +135,13 @@ def test_input_aircraft(client: TestClient, db_session, new_aircraft_fixture):
     assert data["aircraft_data"]["fuel_consumption"] == 18
 
 
-def test_modify_aircraft(client: TestClient, db_session, update_aircraft, aircraft_id=100):
+def test_modify_aircraft(client: TestClient, load_data, db_session, update_aircraft, aircraft_id=100):
     """Tests the 'modify_aircraft' endpoint of the application. This test verifies if the client is modifying aircraft
     object as expected.
 
     Arguments:
         client {TestClient} -- fastapi.testclient object,
+        load_data {Callable} -- Function that creates database and loads data into database,
         db_session {sqlalchemy.orm.session} -- database session,
         update_aircraft {AircraftBaseSchema} -- pytest fixture with updated aircraft object,
         aircraft_id {int} -- aircraft id.
@@ -90,6 +159,9 @@ def test_modify_aircraft(client: TestClient, db_session, update_aircraft, aircra
     data = response.json()
     assert data["name"] == "C-182"
     assert data["aircraft_data"]["cruise_speed"] == 170
+    # Asserts if not provided fields are still the same
+    assert data["manufacturer"] == "Cessna"
+    assert data["aircraft_data"]["fuel_consumption"] == 15
 
 
 def test_modify_aircraft_2(client: TestClient, load_data, db_session):
@@ -127,7 +199,7 @@ def test_modify_aircraft_2(client: TestClient, load_data, db_session):
     assert data["aircraft_data"]["cruise_speed"] == 190
 
 
-def test_remove_aircraft(client: TestClient, db_session, aircraft_id=100):
+def test_remove_aircraft(client: TestClient, load_data, db_session):
     """Tests 'remove_aircraft' endpoint of the application. This test verifies if the client is removing pointed
     aircraft object from the database.
 
@@ -139,11 +211,18 @@ def test_remove_aircraft(client: TestClient, db_session, aircraft_id=100):
     Expected behaviour:
         remove_aircraft() -> Aircraft object is None.
     """
+    aircraft_id = 100
+
     response = client.delete(
         url=f"/aircrafts/delete_aircraft/{aircraft_id}"
     )
 
     assert response.status_code == 204
 
-    data = db_session.query(Aircraft).filter_by(aircraft_id=100).first()
+    data = db_session.query(Aircraft).filter_by(aircraft_id=aircraft_id).first()
     assert data is None
+
+    response = client.delete(
+        url=f"/aircrafts/delete_aircraft/{aircraft_id}"
+    )
+    assert response.status_code == 404

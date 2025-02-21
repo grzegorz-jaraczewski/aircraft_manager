@@ -1,7 +1,8 @@
 # Third party imports
+from enum import Enum, unique
+
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from enum import Enum, unique
 
 
 @unique

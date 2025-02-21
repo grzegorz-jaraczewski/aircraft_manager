@@ -1,12 +1,14 @@
 # Third party imports
-from sqlalchemy.orm import Session
 from time import gmtime, strftime
+
+from sqlalchemy.orm import Session
 
 # Internal imports
 from src.models import Aircraft, AircraftData
-from src.schemas import (InputAircraftPerformanceRangeSchema, OutputAircraftPerformanceRangeSchema,
-                                          InputAircraftPerformanceEnduranceSchema,
-                                          OutputAircraftPerformanceEnduranceSchema)
+from src.schemas import (InputAircraftPerformanceEnduranceSchema,
+                         InputAircraftPerformanceRangeSchema,
+                         OutputAircraftPerformanceEnduranceSchema,
+                         OutputAircraftPerformanceRangeSchema)
 
 
 class Performance:

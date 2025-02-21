@@ -1,5 +1,6 @@
 # Third party imports
 from typing import Optional
+
 from pydantic import BaseModel, ConfigDict, computed_field
 
 # Internal imports

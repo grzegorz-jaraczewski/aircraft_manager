@@ -1,14 +1,16 @@
 # Third party imports
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 # Internal imports
 from src.config.database import get_db
-from src.schemas import (AircraftBaseSchema, AircraftUpdateSchema, AircraftDisplaySchema,
-                                          InputAircraftPerformanceRangeSchema, OutputAircraftPerformanceRangeSchema,
-                                          InputAircraftPerformanceEnduranceSchema,
-                                          OutputAircraftPerformanceEnduranceSchema)
 from src.repository import AircraftRepository
+from src.schemas import (AircraftBaseSchema, AircraftDisplaySchema,
+                         AircraftUpdateSchema,
+                         InputAircraftPerformanceEnduranceSchema,
+                         InputAircraftPerformanceRangeSchema,
+                         OutputAircraftPerformanceEnduranceSchema,
+                         OutputAircraftPerformanceRangeSchema)
 from src.use_cases.performance import Performance
 
 router = APIRouter(prefix="/aircrafts")
@@ -17,7 +19,7 @@ router = APIRouter(prefix="/aircrafts")
 @router.get(
     path="/",
     response_model=list[AircraftDisplaySchema],
-    status_code=200
+    status_code=status.HTTP_200_OK,
 )
 async def show_aircrafts(session: Session = Depends(get_db)) -> list[AircraftDisplaySchema]:
     """Shows all the Aircraft objects in the database.
@@ -35,7 +37,7 @@ async def show_aircrafts(session: Session = Depends(get_db)) -> list[AircraftDis
 @router.post(
     path="/add_aircraft/",
     response_model=AircraftDisplaySchema,
-    status_code=201
+    status_code=status.HTTP_201_CREATED,
 )
 def input_aircraft(aircraft: AircraftBaseSchema,
                    session: Session = Depends(get_db)) -> AircraftDisplaySchema:
@@ -55,7 +57,7 @@ def input_aircraft(aircraft: AircraftBaseSchema,
 @router.patch(
     path="/update_aircraft/{aircraft_id}",
     response_model=AircraftUpdateSchema,
-    status_code=200
+    status_code=status.HTTP_200_OK,
 )
 def modify_aircraft(aircraft_id: int, aircraft: AircraftUpdateSchema,
                     session: Session = Depends(get_db)) -> AircraftUpdateSchema:
@@ -75,7 +77,7 @@ def modify_aircraft(aircraft_id: int, aircraft: AircraftUpdateSchema,
 
 @router.delete(
     path="/delete_aircraft/{aircraft_id}",
-    status_code=204
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 def remove_aircraft(aircraft_id: int, session: Session = Depends(get_db)):
     """Deletes an Aircraft object from the database.
@@ -87,16 +89,19 @@ def remove_aircraft(aircraft_id: int, session: Session = Depends(get_db)):
     Returns:
         dict -- confirmation message that Aircraft object was deleted.
     """
-    aircraft_repo = AircraftRepository(session)
-    aircraft_repo.delete_aircraft(aircraft_id)
-    return {"message": "Aircraft deleted."}
+    try:
+        aircraft_repo = AircraftRepository(session)
+        aircraft_repo.delete_aircraft(aircraft_id)
+        return {"message": "Aircraft deleted."}
+    except ValueError as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
 
 
 @router.get(
     path="/performance/range/{}".format(
         "/".join([f"{key}" for key in InputAircraftPerformanceRangeSchema.__dict__['__pydantic_fields__'].keys()])),
     response_model=OutputAircraftPerformanceRangeSchema,
-    status_code=200
+    status_code=status.HTTP_200_OK,
 )
 def get_range(aircraft: InputAircraftPerformanceRangeSchema = Depends(),
               session: Session = Depends(get_db)) -> OutputAircraftPerformanceRangeSchema:
@@ -117,7 +122,7 @@ def get_range(aircraft: InputAircraftPerformanceRangeSchema = Depends(),
     path="/performance/endurance/{}".format(
         "/".join([f"{key}" for key in InputAircraftPerformanceEnduranceSchema.__dict__['__pydantic_fields__'].keys()])),
     response_model=OutputAircraftPerformanceEnduranceSchema,
-    status_code=200
+    status_code=status.HTTP_200_OK,
 )
 def get_endurance(aircraft: InputAircraftPerformanceEnduranceSchema = Depends(),
                   session: Session = Depends(get_db)) -> OutputAircraftPerformanceEnduranceSchema:
