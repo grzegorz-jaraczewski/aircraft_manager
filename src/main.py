@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 class BaseConfig(BaseSettings):
-    HOST: str = os.getenv("HOST")
-    PORT: int = os.getenv("PORT")
-    RELOAD: bool = os.getenv("RELOAD")
+    host: str = os.getenv("HOST")
+    port: int = os.getenv("PORT")
+    reload: bool = os.getenv("RELOAD")
 
 
 @asynccontextmanager
@@ -77,5 +77,5 @@ app.include_router(router_aircraft)
 
 if __name__ == "__main__":
     base_config = BaseConfig()
-    logger.info(f"Starting server on {base_config.HOST}:{base_config.PORT}")
-    uvicorn.run(app="main:app", host=base_config.HOST, port=base_config.PORT, reload=base_config.RELOAD)
+    logger.info(f"Starting server on {base_config.host}:{base_config.port}")
+    uvicorn.run(app="main:app", host=base_config.host, port=base_config.port, reload=base_config.reload)
