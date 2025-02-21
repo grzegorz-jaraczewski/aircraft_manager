@@ -1,16 +1,12 @@
 # Third party imports
-import asyncio
-
 import pytest
 from unittest.mock import patch, Mock
-from sqlalchemy.orm import Session
 
 # Internal imports
 from src.schemas import (InputAircraftPerformanceEnduranceSchema,
                          InputAircraftPerformanceRangeSchema,
                          OutputAircraftPerformanceEnduranceSchema,
                          OutputAircraftPerformanceRangeSchema)
-from src.models import Aircraft, AircraftData
 from src.use_cases.performance import Performance
 from tests.conftest import db_session, load_data
 
@@ -60,8 +56,8 @@ class TestPerformance:
         mock_aircraft_data.cruise_speed = 190
         mock_aircraft_data.fuel_consumption = 15
 
-        mock_session.query.return_value.filter_by.return_value.first.side_effect = [mock_aircraft,
-                                                                                    mock_aircraft_data]
+        mock_session.query.return_value.filter_by.return_value.first.side_effect = [
+            mock_aircraft, mock_aircraft_data]
         result = performance.calculate_range(mock_input_aircraft_performance_range_schema)
 
         assert isinstance(result, OutputAircraftPerformanceRangeSchema)
