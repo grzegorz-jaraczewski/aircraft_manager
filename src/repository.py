@@ -53,17 +53,10 @@ class AircraftRepository:
             Raises NoResultFound exception if there is no aircraft object with given aircraft_id
             or returns True otherwise.
         """
-        try:
-            exist = select(exists().where(Aircraft.aircraft_id == aircraft_id))
-            result = self.session.execute(exist).scalar()
-            if not result:
-                logger.error(f"Aircraft with id {aircraft_id} not found.")
-                raise NoResultFound(f"Aircraft with id {aircraft_id} not found")
+        exist = select(exists().where(Aircraft.aircraft_id == aircraft_id))
+        result = self.session.execute(exist).scalar()
 
-            logger.info(f"Aircraft with id {aircraft_id} found.")
-            return True
-        finally:
-            self.session.close()
+        return bool(result)
 
     def add_aircraft(self, aircraft: AircraftBaseSchema) -> AircraftDisplaySchema:
         """
