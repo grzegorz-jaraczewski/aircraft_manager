@@ -123,14 +123,16 @@ class AircraftRepository:
                     raise InvalidDataError("No valid aircraft update data provided. "
                                            "Ensure that at least one field is populated.")
 
-                with self.session.begin():
-                    if ac_values:
-                        self.session.query(Aircraft).filter_by(
-                            aircraft_id=aircraft_id).update(values={**ac_values})
+                if ac_values:
+                    self.session.query(Aircraft).filter_by(
+                        aircraft_id=aircraft_id).update(values={**ac_values})
 
-                    if ac_data_values:
-                        self.session.query(AircraftData).filter_by(
-                            aircraft_id=aircraft_id).update(values={**ac_data_values})
+                if ac_data_values:
+                    self.session.query(AircraftData).filter_by(
+                        aircraft_id=aircraft_id).update(values={**ac_data_values})
+
+                self.session.commit()
+                self.session.close()
 
                 updated_aircraft = {**ac_values, "aircraft_data": {**ac_data_values}}
                 logger.info(f"Aircraft with id {aircraft_id} updated successfully.")
@@ -162,9 +164,10 @@ class AircraftRepository:
         """
         try:
             if self.is_present(aircraft_id=aircraft_id):
-                with self.session.begin():
-                    self.session.query(Aircraft).filter_by(aircraft_id=aircraft_id).delete()
-                    logger.info(f"Aircraft with id {aircraft_id} deleted successfully.")
+                self.session.query(Aircraft).filter_by(aircraft_id=aircraft_id).delete()
+                self.session.commit()
+                self.session.close()
+                logger.info(f"Aircraft with id {aircraft_id} deleted successfully.")
 
                 return {"message": f"Aircraft with id {aircraft_id} deleted successfully."}
 
