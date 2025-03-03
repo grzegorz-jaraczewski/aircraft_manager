@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, computed_field
 
 # Internal imports
 from src.models import AircraftType
+from src.router.weather_api import current_wind_speed
 
 
 # Aircraft Data class schemas
@@ -73,7 +74,7 @@ class InputAircraftPerformanceRangeSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     aircraft_id: int
-    wind_speed: float
+    wind_speed: float = current_wind_speed
     fuel: float
 
 
