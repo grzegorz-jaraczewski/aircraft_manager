@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 from src.models import Aircraft, AircraftData
 from src.schemas import (AircraftBaseSchema, AircraftDataUpdateSchema,
                          AircraftDisplaySchema, AircraftUpdateSchema)
+from src.exceptions import DatabaseIntegrityError, InvalidDataError, AircraftNotFoundError, AircraftRepositoryError
 
 logger = logging.getLogger(__name__)
 
@@ -43,27 +44,18 @@ class AircraftRepository:
 
     def is_present(self, aircraft_id: int) -> bool:
         """
-        Verifies if the aircraft object with given aircraft_id exists in the database.
+        Checks if an aircraft with the given aircraft_id exists in the database.
 
         Arguments:
-            session {sqlalchemy.orm.Session} -- The database session,
             aircraft_id {int} -- The aircraft object id.
 
         Returns:
-            Raises NoResultFound exception if there is no aircraft object with given aircraft_id
-            or returns True otherwise.
+            bool: True if the aircraft exists, otherwise False.
         """
-        try:
-            exist = select(exists().where(Aircraft.aircraft_id == aircraft_id))
-            result = self.session.execute(exist).scalar()
-            if not result:
-                logger.error(f"Aircraft with id {aircraft_id} not found.")
-                raise NoResultFound(f"Aircraft with id {aircraft_id} not found")
+        exist = select(exists().where(Aircraft.aircraft_id == aircraft_id))
+        result = self.session.execute(exist).scalar_one_or_none()
 
-            logger.info(f"Aircraft with id {aircraft_id} found.")
-            return True
-        finally:
-            self.session.close()
+        return bool(result)
 
     def add_aircraft(self, aircraft: AircraftBaseSchema) -> AircraftDisplaySchema:
         """
@@ -90,11 +82,11 @@ class AircraftRepository:
         except IntegrityError as e:
             self.session.rollback()
             logger.error(f"Integrity error adding aircraft: {str(e)}")
-            raise ValueError(f"Integrity error adding aircraft: {str(e)}")
+            raise DatabaseIntegrityError
 
         except Exception as e:
             logger.error(f"Unexpected error adding aircraft: {str(e)}")
-            raise ValueError(f"Error adding aircraft: {str(e)}")
+            raise InvalidDataError(message=str(e))
 
     def display_aircrafts(self) -> List[AircraftDisplaySchema]:
         """
@@ -102,9 +94,12 @@ class AircraftRepository:
         the Aircraft objects, using the AircraftDisplaySchema.
         """
         all_aircrafts = self.session.query(Aircraft).options(joinedload(Aircraft.aircraft_data)).all()
+        if not all_aircrafts:
+            logger.warning("No aircraft found in the database.")
+
         return [AircraftDisplaySchema.model_validate(aircraft) for aircraft in all_aircrafts]
 
-    def update_aircraft(self, aircraft_id: int, **kwargs) -> AircraftUpdateSchema:
+    def update_aircraft(self, aircraft_id: int, **kwargs) -> AircraftUpdateSchema | None:
         """
         Finds the aircraft instance based on the given 'id',
         and updates the elements given as a keywords arguments.
@@ -125,15 +120,19 @@ class AircraftRepository:
                     **kwargs.get("aircraft_data", {})).model_dump(exclude_none=True)
 
                 if not ac_values and not ac_data_values:
-                    raise ValueError("No valid fields provided to update.")
+                    raise InvalidDataError("No valid aircraft update data provided. "
+                                           "Ensure that at least one field is populated.")
 
-                with self.session.begin():
-                    if ac_values:
-                        self.session.query(Aircraft).filter_by(
-                            aircraft_id=aircraft_id).update(values={**ac_values})
-                    if ac_data_values:
-                        self.session.query(AircraftData).filter_by(
-                            aircraft_id=aircraft_id).update(values={**ac_data_values})
+                if ac_values:
+                    self.session.query(Aircraft).filter_by(
+                        aircraft_id=aircraft_id).update(values={**ac_values})
+
+                if ac_data_values:
+                    self.session.query(AircraftData).filter_by(
+                        aircraft_id=aircraft_id).update(values={**ac_data_values})
+
+                self.session.commit()
+                self.session.close()
 
                 updated_aircraft = {**ac_values, "aircraft_data": {**ac_data_values}}
                 logger.info(f"Aircraft with id {aircraft_id} updated successfully.")
@@ -142,18 +141,18 @@ class AircraftRepository:
 
             except NoResultFound as e:
                 logger.error(f"Aircraft with id {aircraft_id} not found: {str(e)}")
-                raise ValueError(f"Error {e}")
+                raise AircraftNotFoundError
 
             except IntegrityError as e:
                 self.session.rollback()
                 logger.error(f"Integrity error updating aircraft: {str(e)}")
-                raise ValueError(f"Integrity error updating aircraft: {str(e)}")
+                raise DatabaseIntegrityError(str(e))
 
             except Exception as e:
                 logger.error(f"Unexpected error updating aircraft: {str(e)}")
-                raise ValueError(f"Unexpected error: {str(e)}")
+                raise AircraftRepositoryError(str(e))
 
-    def delete_aircraft(self, aircraft_id: int) -> Dict[str, str]:
+    def delete_aircraft(self, aircraft_id: int) -> Dict[str, str] | None:
         """
         Deletes the aircraft instance of given 'id' from the database.
 
@@ -165,17 +164,22 @@ class AircraftRepository:
         """
         try:
             if self.is_present(aircraft_id=aircraft_id):
-                with self.session.begin():
-                    self.session.query(Aircraft).filter_by(aircraft_id=aircraft_id).delete()
-                    logger.info(f"Aircraft with id {aircraft_id} deleted successfully.")
+                self.session.query(Aircraft).filter_by(aircraft_id=aircraft_id).delete()
+                self.session.commit()
+                self.session.close()
+                logger.info(f"Aircraft with id {aircraft_id} deleted successfully.")
 
                 return {"message": f"Aircraft with id {aircraft_id} deleted successfully."}
+
+        except NoResultFound:
+            logger.error("Aircraft not found.")
+            raise AircraftNotFoundError(f"Aircraft with id {aircraft_id} not found.")
 
         except IntegrityError as e:
             self.session.rollback()
             logger.error(f"Integrity error deleting aircraft: {str(e)}")
-            raise ValueError(f"Integrity error deleting aircraft: {str(e)}")
+            raise DatabaseIntegrityError(str(e))
 
         except Exception as e:
             logger.error(f"Unexpected error deleting aircraft: {str(e)}")
-            raise ValueError(f"Unexpected error: {str(e)}")
+            raise AircraftRepositoryError(str(e))

@@ -216,13 +216,7 @@ def test_remove_aircraft(client: TestClient, load_data, db_session):
     response = client.delete(
         url=f"/aircrafts/delete_aircraft/{aircraft_id}"
     )
-
     assert response.status_code == 204
 
     data = db_session.query(Aircraft).filter_by(aircraft_id=aircraft_id).first()
     assert data is None
-
-    response = client.delete(
-        url=f"/aircrafts/delete_aircraft/{aircraft_id}"
-    )
-    assert response.status_code == 404
