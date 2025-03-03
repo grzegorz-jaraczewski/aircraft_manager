@@ -39,7 +39,7 @@ async def lifespan(fastapp: FastAPI):
             await engine.dispose()
         except Exception as e:
             logger.error(f"Failed to close database connection: {e}.")
-            raise DatabaseConnectionError(status_code=503, message=str(e))
+            raise DatabaseConnectionError(message=str(e))
 
 
 app = FastAPI()

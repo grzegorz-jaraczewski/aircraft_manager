@@ -16,7 +16,7 @@ from src.schemas import AircraftDisplaySchema, AircraftUpdateSchema
 load_dotenv(r"C:\PyCharm\Aircraft_Manager\src\.env.testing")
 
 engine = create_engine(
-    os.getenv("DATABASE_URL"),
+    os.getenv("TEST_DATABASE_URL"),
     connect_args={"check_same_thread": False},
     poolclass=StaticPool)
 
