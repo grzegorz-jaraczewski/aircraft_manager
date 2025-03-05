@@ -2,36 +2,46 @@
 import os
 import requests
 from dotenv import load_dotenv
+from dataclasses import dataclass
 
 # Load environmental variables
 load_dotenv()
 
 
+@dataclass
+class FieldsMapper:
+    location: str = None
+    current: str = None
+    name: str = None
+    last_updated: str = None
+    current_wind_speed: str = None
+    current_wind_direction: str = None
+    current_temperature: str = None
+
+
+@dataclass
+class WeatherData:
+    name: str = None
+    last_updated: str = None
+    current_wind_speed: str = None
+    current_wind_direction: str = None
+    current_temperature: str = None
+
+
 class WeatherApi:
-    def __init__(self, api_url="http://api.weatherapi.com/v1/current.json", api_key=None, fields=None, **api_params):
+    def __init__(self,
+                 api_url: str = None,
+                 api_key: str = None,
+                 fields: FieldsMapper = None,
+                 **api_params):
         self.api_url = api_url
         self.api_key = api_key or os.getenv("API_KEY")
         self.api_params = api_params or {}
-        self.api_params.setdefault("key", self.api_key)
-        self.api_params.setdefault("q", "krk")
+        self.fields = fields
+        self.location = None
+        self.current = None
 
-        if fields:
-            self.fields = {
-                "location": fields.get("location"),
-                "current": fields.get("current"),
-                "name": fields.get("name"),
-                "last_updated": fields.get("last_updated"),
-                "current_wind_speed": fields.get("current_wind_speed"),
-                "current_wind_direction": fields.get("current_wind_direction"),
-                "current_temperature": fields.get("current_temperature")
-            }
-        self.name = None
-        self.last_updated = None
-        self.current_wind_speed = None
-        self.current_wind_direction = None
-        self.current_temperature = None
-
-    def get_weather_data(self):
+    def get_weather_data(self) -> WeatherData | None:
         try:
             response = requests.get(url=self.api_url, params=self.api_params)
             response.raise_for_status()
@@ -45,18 +55,12 @@ class WeatherApi:
                 raise ValueError(f"API Error: {error_message}.")
 
             # Extract data safely
-            location = data.get(self.fields.get("location"), {})
-            current = data.get(self.fields.get("current"), {})
+            self.location = data.get(self.fields.location, {})
+            self.current = data.get(self.fields.current, {})
 
             # Ensure valid location and current data
-            if not location or not current:
+            if not self.location or not self.current:
                 raise ValueError("Weather data is incomplete or missing.")
-
-            self.name = location.get(self.fields.get("name"), "Unknown")
-            self.last_updated = current.get(self.fields.get("last_updated"), "Unknown")
-            self.current_wind_speed = current.get(self.fields.get("current_wind_speed"), "Unknown")
-            self.current_wind_direction = current.get(self.fields.get("current_wind_direction"), "Unknown")
-            self.current_temperature = current.get(self.fields.get("current_temperature"), "Unknown")
 
         except requests.exceptions.RequestException as err:
             print(f"Error fetching weather data: {err}.")
@@ -64,41 +68,55 @@ class WeatherApi:
         except ValueError as err:
             print(f"API Error: {err}.")
 
-    def print_weather_data(self):
+        return WeatherData(
+            name=self.location.get(self.fields.name, "Unknown"),
+            last_updated=self.current.get(self.fields.last_updated, "Unknown"),
+            current_wind_speed=self.current.get(self.fields.current_wind_speed, "Unknown"),
+            current_wind_direction=self.current.get(self.fields.current_wind_direction, "Unknown"),
+            current_temperature=self.current.get(self.fields.current_temperature, "Unknown")
+        )
+
+    @staticmethod
+    def show_weather_data(wx_data: WeatherData):
         # Print weather details
-        print(f"Location name: {self.name}")
-        print(f"Last update: {self.last_updated}.")
-        print(f"Current wind direction and speed: {self.current_wind_direction}⁰ / {self.current_wind_speed} kph.")
-        print(f"Current temperature: {self.current_temperature}⁰ C.")
+        print(f"Location name: {wx_data.name}.")
+        print(f"Last update: {wx_data.last_updated}.")
+        print(f"Current wind direction and speed: {wx_data.current_wind_direction}⁰ /"
+              f" {wx_data.current_wind_speed} kph.")
+        print(f"Current temperature: {wx_data.current_temperature}⁰ C.")
+        print("-----End of message-----")
+        print()
 
 
-weather_api = WeatherApi(
-    fields={
-        "location": "location",
-        "current": "current",
-        "name": "name",
-        "last_updated": "last_updated",
-        "current_wind_speed": "wind_kph",
-        "current_wind_direction": "wind_degree",
-        "current_temperature": "temp_c"
-    },
-    q="waw")
+if __name__ == "__main__":
+    # First API service
+    weather_api = WeatherApi(
+        api_url="http://api.weatherapi.com/v1/current.json",
+        fields=FieldsMapper(
+            location="location",
+            current="current",
+            name="name",
+            last_updated="last_updated",
+            current_wind_speed="wind_kph",
+            current_wind_direction="wind_degree",
+            current_temperature="temp_c"
+        ), key=os.getenv("API_KEY"), q="waw")
 
-weather_api.get_weather_data()
-weather_api.print_weather_data()
+    weather_data = weather_api.get_weather_data()
+    weather_api.show_weather_data(wx_data=weather_data)
 
-new_weather_api = WeatherApi(
-    api_url="http://api.weatherstack.com/current",
-    fields={
-        "location": "location",
-        "current": "current",
-        "name": "name",
-        "last_updated": "observation_time",
-        "current_wind_speed": "wind_speed",
-        "current_wind_direction": "wind_degree",
-        "current_temperature": "temperature"
-    },
-    access_key=os.getenv("NEW_API_KEY"), query="ktw"
-)
-new_weather_api.get_weather_data()
-new_weather_api.print_weather_data()
+    # Second API service
+    new_weather_api = WeatherApi(
+        api_url="http://api.weatherstack.com/current",
+        fields=FieldsMapper(
+            location="location",
+            current="current",
+            name="name",
+            last_updated="observation_time",
+            current_wind_speed="wind_speed",
+            current_wind_direction="wind_degree",
+            current_temperature="temperature"
+        ), access_key=os.getenv("NEW_API_KEY"), query="ktw")
+
+    new_weather_data = new_weather_api.get_weather_data()
+    new_weather_api.show_weather_data(wx_data=new_weather_data)
