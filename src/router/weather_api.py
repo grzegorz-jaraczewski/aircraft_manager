@@ -1,15 +1,53 @@
 # Third party imports
+import logging
 import os
 import requests
 from dotenv import load_dotenv
 from dataclasses import dataclass
+from dateutil import parser
 
 # Load environmental variables
 load_dotenv()
 
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def date_formatter(date_input):
+    """
+    Parses and formats a given date string into the format YYYY-MM-DD HH:MM.
+
+    Args:
+        date_input: A string representing a date/time.
+
+    Returns:
+        Formatted date string in YYYY-MM-DD HH:MM format.
+
+    Raises:
+        ValueError: If the input date format is invalid.
+    """
+    try:
+        date_formatted = parser.parse(date_input)
+        return date_formatted.strftime("%Y-%m-%d %H:%M")
+    except TypeError:
+        raise TypeError("Invalid date/time input. Please provide recognizable data.")
+
+
 @dataclass
 class FieldsMapper:
+    """
+    Data class for mapping field names used in the API response.
+
+    Attributes:
+        location: Key for location data.
+        current: Key for current weather data.
+        name: Key for location name.
+        last_updated: Key for last updated time.
+        current_wind_speed: Key for wind speed.
+        current_wind_direction: Key for wind direction.
+        current_temperature: Key for temperature.
+    """
     location: str = None
     current: str = None
     name: str = None
@@ -21,6 +59,16 @@ class FieldsMapper:
 
 @dataclass
 class WeatherData:
+    """
+    Data class representing the structured weather data.
+
+    Attributes:
+        name: Location name.
+        last_updated: Last updated timestamp.
+        current_wind_speed: Current wind speed.
+        current_wind_direction: Current wind direction.
+        current_temperature: Current temperature.
+    """
     name: str = None
     last_updated: str = None
     current_wind_speed: str = None
@@ -29,6 +77,15 @@ class WeatherData:
 
 
 class WeatherApi:
+    """
+    A class to interact with a weather API and fetch weather data.
+
+    Attributes:
+        api_url: Base URL of the weather API.
+        api_key: API key for authentication.
+        fields: An instance of FieldsMapper for mapping API response fields.
+        api_params: Additional parameters to pass to the API request.
+    """
     def __init__(self,
                  api_url: str = None,
                  api_key: str = None,
@@ -38,10 +95,19 @@ class WeatherApi:
         self.api_key = api_key or os.getenv("API_KEY")
         self.api_params = api_params or {}
         self.fields = fields
-        self.location = None
-        self.current = None
+        self.location = {}
+        self.current = {}
 
-    def get_weather_data(self) -> WeatherData | None:
+    def get_weather_data(self) -> WeatherData:
+        """
+        Fetches weather data from the API and structures it into a WeatherData object.
+
+        Returns:
+            A WeatherData object containing structured weather information.
+
+        Raises:
+             ValueError: If the API response contains an error or missing data.
+        """
         try:
             response = requests.get(url=self.api_url, params=self.api_params)
             response.raise_for_status()
@@ -51,7 +117,7 @@ class WeatherApi:
             # Check if API returned an error
             if "error" in data:
                 error_message = data['error'].get('message', 'Unknown error')
-                print(f"API Error: {error_message}.")
+                logger.error(f"API Error: {error_message}")
                 raise ValueError(f"API Error: {error_message}.")
 
             # Extract data safely
@@ -60,13 +126,14 @@ class WeatherApi:
 
             # Ensure valid location and current data
             if not self.location or not self.current:
+                logger.error("Weather data is incomplete or missing.")
                 raise ValueError("Weather data is incomplete or missing.")
 
         except requests.exceptions.RequestException as err:
-            print(f"Error fetching weather data: {err}.")
+            logger.error(f"Error fetching weather data: {err}.")
 
         except ValueError as err:
-            print(f"API Error: {err}.")
+            logger.error(f"API Error: {err}.")
 
         return WeatherData(
             name=self.location.get(self.fields.name, "Unknown"),
@@ -78,9 +145,15 @@ class WeatherApi:
 
     @staticmethod
     def show_weather_data(wx_data: WeatherData):
+        """
+        Displays weather data in a readable format.
+
+        Args:
+            wx_data: A WeatherData object containing weather details.
+        """
         # Print weather details
         print(f"Location name: {wx_data.name}.")
-        print(f"Last update: {wx_data.last_updated}.")
+        print(f"Last update: {date_formatter(wx_data.last_updated)}.")
         print(f"Current wind direction and speed: {wx_data.current_wind_direction}⁰ /"
               f" {wx_data.current_wind_speed} kph.")
         print(f"Current temperature: {wx_data.current_temperature}⁰ C.")
@@ -100,7 +173,7 @@ if __name__ == "__main__":
             current_wind_speed="wind_kph",
             current_wind_direction="wind_degree",
             current_temperature="temp_c"
-        ), key=os.getenv("API_KEY"), q="waw")
+        ), key=os.getenv("API_KEY"), q="krk")
 
     weather_data = weather_api.get_weather_data()
     weather_api.show_weather_data(wx_data=weather_data)
