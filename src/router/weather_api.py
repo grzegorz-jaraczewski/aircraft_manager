@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def date_formatter(date_input):
+def date_formatter(date_input: str) -> str:
     """
     Parses and formats a given date string into the format YYYY-MM-DD HH:MM.
 
@@ -90,7 +90,7 @@ class WeatherApi:
                  api_url: str = None,
                  api_key: str = None,
                  fields: FieldsMapper = None,
-                 **api_params):
+                 **api_params: str):
         self.api_url = api_url
         self.api_key = api_key or os.getenv("API_KEY")
         self.api_params = api_params or {}
@@ -173,7 +173,7 @@ if __name__ == "__main__":
             current_wind_speed="wind_kph",
             current_wind_direction="wind_degree",
             current_temperature="temp_c"
-        ), key=os.getenv("API_KEY"), q="krk")
+        ), key=os.getenv("API_KEY"), q="waw")
 
     weather_data = weather_api.get_weather_data()
     weather_api.show_weather_data(wx_data=weather_data)
@@ -189,7 +189,7 @@ if __name__ == "__main__":
             current_wind_speed="wind_speed",
             current_wind_direction="wind_degree",
             current_temperature="temperature"
-        ), access_key=os.getenv("NEW_API_KEY"), query="ktw")
+        ), access_key=os.getenv("NEW_API_KEY"), query="krk")
 
     new_weather_data = new_weather_api.get_weather_data()
     new_weather_api.show_weather_data(wx_data=new_weather_data)
