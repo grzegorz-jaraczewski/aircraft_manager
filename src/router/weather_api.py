@@ -1,10 +1,10 @@
 # Third party imports
+import datetime
 import logging
 import os
 import requests
 from dotenv import load_dotenv
 from dataclasses import dataclass
-from dateutil import parser
 
 # Load environmental variables
 load_dotenv()
@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def date_formatter(date_input: str) -> str:
+def date_formatter(date_input: str) -> datetime:
     """
     Parses and formats a given date string into the format YYYY-MM-DD HH:MM.
 
@@ -22,16 +22,31 @@ def date_formatter(date_input: str) -> str:
         date_input: A string representing a date/time.
 
     Returns:
-        Formatted date string in YYYY-MM-DD HH:MM format.
+        Formatted date string in YYYY-MM-DD HH:MM:SS format.
 
     Raises:
-        ValueError: If the input date format is invalid.
+        ValueError: If the input date format is not recognizable.
     """
-    try:
-        date_formatted = parser.parse(date_input)
-        return date_formatted.strftime("%Y-%m-%d %H:%M")
-    except TypeError:
-        raise TypeError("Invalid date/time input. Please provide recognizable data.")
+    possible_date_formats = [
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d %I:%M %p",
+        "%I:%M %p",
+        "%H:%M",
+        "%Y-%m-%d"
+    ]
+
+    for date_format in possible_date_formats:
+        try:
+            dt = datetime.datetime.strptime(date_input, date_format)
+            if "%Y" not in date_format:
+                dt = datetime.datetime.combine(datetime.datetime.today().date(), dt.time())
+            return dt
+
+        except ValueError:
+            continue
+
+    raise ValueError("Invalid date/time input. Please provide recognizable data.")
 
 
 @dataclass
