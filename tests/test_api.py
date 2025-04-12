@@ -41,7 +41,7 @@ def test_routes_exist(client: TestClient):
         "/update_aircraft/<aircraft_id>",
         "/delete_aircraft/<aircraft_id>",
         "/performance/range",
-        "/performance/endurance/"
+        "/performance/endurance/",
     ]
     for route in expected_routes:
         response = client.get(route)
@@ -122,10 +122,7 @@ def test_input_aircraft(client: TestClient, load_data, db_session, new_aircraft_
         input_aircraft() -> adds AircraftDisplaySchema(aircraft_id=100, name='C-152', manufacturer='Cessna'...)
         object into the database.
     """
-    response = client.post(
-        url="/aircrafts/add_aircraft",
-        json=new_aircraft_fixture.model_dump()
-    )
+    response = client.post(url="/aircrafts/add_aircraft", json=new_aircraft_fixture.model_dump())
 
     assert response.status_code == 201
 
@@ -135,7 +132,13 @@ def test_input_aircraft(client: TestClient, load_data, db_session, new_aircraft_
     assert data["aircraft_data"]["fuel_consumption"] == 18
 
 
-def test_modify_aircraft(client: TestClient, load_data, db_session, update_aircraft, aircraft_id=100):
+def test_modify_aircraft(
+    client: TestClient,
+    load_data,
+    db_session,
+    update_aircraft,
+    aircraft_id=100,
+):
     """Tests the 'modify_aircraft' endpoint of the application. This test verifies if the client is modifying aircraft
     object as expected.
 
@@ -151,7 +154,7 @@ def test_modify_aircraft(client: TestClient, load_data, db_session, update_aircr
     """
     response = client.patch(
         url=f"/aircrafts/update_aircraft/{aircraft_id}",
-        json=update_aircraft.model_dump(exclude_none=True)
+        json=update_aircraft.model_dump(exclude_none=True),
     )
 
     assert response.status_code == 200
@@ -188,7 +191,7 @@ def test_modify_aircraft_2(client: TestClient, load_data, db_session):
 
     response = client.patch(
         url=f"/aircrafts/update_aircraft/{aircraft_id}",
-        json=aircraft_to_update
+        json=aircraft_to_update,
     )
 
     assert response.status_code == 200
@@ -213,9 +216,7 @@ def test_remove_aircraft(client: TestClient, load_data, db_session):
     """
     aircraft_id = 100
 
-    response = client.delete(
-        url=f"/aircrafts/delete_aircraft/{aircraft_id}"
-    )
+    response = client.delete(url=f"/aircrafts/delete_aircraft/{aircraft_id}")
     assert response.status_code == 204
 
     data = db_session.query(Aircraft).filter_by(aircraft_id=aircraft_id).first()

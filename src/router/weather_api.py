@@ -1,17 +1,16 @@
 # Third party imports
 import datetime
-import logging
 import os
-import requests
-from dotenv import load_dotenv
 from dataclasses import dataclass
+from logging import INFO, basicConfig, getLogger
 
-# Load environmental variables
-load_dotenv()
+import requests
 
+# Internal imports
+from src.config.database import settings
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+basicConfig(level=INFO, format="[%(levelname)s] %(message)s")
+logger = getLogger()
 
 
 def date_formatter(date_input: str) -> datetime:
@@ -27,16 +26,8 @@ def date_formatter(date_input: str) -> datetime:
     Raises:
         ValueError: If the input date format is not recognizable.
     """
-    possible_date_formats = [
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%d %H:%M",
-        "%Y-%m-%d %I:%M %p",
-        "%I:%M %p",
-        "%H:%M",
-        "%Y-%m-%d"
-    ]
 
-    for date_format in possible_date_formats:
+    for date_format in settings.possible_date_formats:
         try:
             dt = datetime.datetime.strptime(date_input, date_format)
             if "%Y" not in date_format:
@@ -63,6 +54,7 @@ class FieldsMapper:
         current_wind_direction: Key for wind direction.
         current_temperature: Key for temperature.
     """
+
     location: str = None
     current: str = None
     name: str = None
@@ -84,6 +76,7 @@ class WeatherData:
         current_wind_direction: Current wind direction.
         current_temperature: Current temperature.
     """
+
     name: str = None
     last_updated: str = None
     current_wind_speed: str = None
@@ -101,11 +94,14 @@ class WeatherApi:
         fields: An instance of FieldsMapper for mapping API response fields.
         api_params: Additional parameters to pass to the API request.
     """
-    def __init__(self,
-                 api_url: str = None,
-                 api_key: str = None,
-                 fields: FieldsMapper = None,
-                 **api_params: str):
+
+    def __init__(
+        self,
+        api_url: str = None,
+        api_key: str = None,
+        fields: FieldsMapper = None,
+        **api_params: str,
+    ):
         self.api_url = api_url
         self.api_key = api_key or os.getenv("API_KEY")
         self.api_params = api_params or {}
@@ -131,7 +127,7 @@ class WeatherApi:
 
             # Check if API returned an error
             if "error" in data:
-                error_message = data['error'].get('message', 'Unknown error')
+                error_message = data["error"].get("message", "Unknown error")
                 logger.error(f"API Error: {error_message}")
                 raise ValueError(f"API Error: {error_message}.")
 
@@ -155,7 +151,7 @@ class WeatherApi:
             last_updated=self.current.get(self.fields.last_updated, "Unknown"),
             current_wind_speed=self.current.get(self.fields.current_wind_speed, "Unknown"),
             current_wind_direction=self.current.get(self.fields.current_wind_direction, "Unknown"),
-            current_temperature=self.current.get(self.fields.current_temperature, "Unknown")
+            current_temperature=self.current.get(self.fields.current_temperature, "Unknown"),
         )
 
     @staticmethod
@@ -169,8 +165,9 @@ class WeatherApi:
         # Print weather details
         print(f"Location name: {wx_data.name}.")
         print(f"Last update: {date_formatter(wx_data.last_updated)}.")
-        print(f"Current wind direction and speed: {wx_data.current_wind_direction}⁰ /"
-              f" {wx_data.current_wind_speed} kph.")
+        print(
+            f"Current wind direction and speed: {wx_data.current_wind_direction}⁰ / {wx_data.current_wind_speed} kph."
+        )
         print(f"Current temperature: {wx_data.current_temperature}⁰ C.")
         print("-----End of message-----")
         print()
@@ -187,8 +184,11 @@ if __name__ == "__main__":
             last_updated="last_updated",
             current_wind_speed="wind_kph",
             current_wind_direction="wind_degree",
-            current_temperature="temp_c"
-        ), key=os.getenv("API_KEY"), q="waw")
+            current_temperature="temp_c",
+        ),
+        key=os.getenv("API_KEY"),
+        q="waw",
+    )
 
     weather_data = weather_api.get_weather_data()
     weather_api.show_weather_data(wx_data=weather_data)
@@ -203,8 +203,11 @@ if __name__ == "__main__":
             last_updated="observation_time",
             current_wind_speed="wind_speed",
             current_wind_direction="wind_degree",
-            current_temperature="temperature"
-        ), access_key=os.getenv("NEW_API_KEY"), query="krk")
+            current_temperature="temperature",
+        ),
+        access_key=os.getenv("NEW_API_KEY"),
+        query="krk",
+    )
 
     new_weather_data = new_weather_api.get_weather_data()
     new_weather_api.show_weather_data(wx_data=new_weather_data)

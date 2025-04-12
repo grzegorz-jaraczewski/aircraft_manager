@@ -5,10 +5,12 @@ from sqlalchemy.orm import Session
 
 # Internal imports
 from src.models import Aircraft, AircraftData
-from src.schemas import (InputAircraftPerformanceEnduranceSchema,
-                         InputAircraftPerformanceRangeSchema,
-                         OutputAircraftPerformanceEnduranceSchema,
-                         OutputAircraftPerformanceRangeSchema)
+from src.schemas import (
+    InputAircraftPerformanceEnduranceSchema,
+    InputAircraftPerformanceRangeSchema,
+    OutputAircraftPerformanceEnduranceSchema,
+    OutputAircraftPerformanceRangeSchema,
+)
 
 
 class Performance:
@@ -30,8 +32,7 @@ class Performance:
         """
         self.session = session
 
-    def calculate_range(self, input_data: InputAircraftPerformanceRangeSchema) -> (
-            OutputAircraftPerformanceRangeSchema):
+    def calculate_range(self, input_data: InputAircraftPerformanceRangeSchema) -> OutputAircraftPerformanceRangeSchema:
         """Calculates maximum range [km] based on the given fuel and wind speed in reference to cruise_speed saved in
         the database.
 
@@ -44,13 +45,15 @@ class Performance:
         aircraft = self.session.query(Aircraft).filter_by(aircraft_id=input_data.aircraft_id).first()
         aircraft_data = self.session.query(AircraftData).filter_by(aircraft_id=input_data.aircraft_id).first()
 
-        calculated_range = ((aircraft_data.cruise_speed + input_data.wind_speed) * input_data.fuel /
-                            aircraft_data.fuel_consumption)
+        calculated_range = (
+            (aircraft_data.cruise_speed + input_data.wind_speed) * input_data.fuel / aircraft_data.fuel_consumption
+        )
 
         return OutputAircraftPerformanceRangeSchema(name=str(aircraft.name), range=calculated_range)
 
-    def calculate_endurance(self, input_data: InputAircraftPerformanceEnduranceSchema) -> (
-            OutputAircraftPerformanceEnduranceSchema):
+    def calculate_endurance(
+        self, input_data: InputAircraftPerformanceEnduranceSchema
+    ) -> OutputAircraftPerformanceEnduranceSchema:
         """Calculates maximum aircraft endurance [h] based on the given fuel in reference to fuel_consumption saved in
         the database.
 

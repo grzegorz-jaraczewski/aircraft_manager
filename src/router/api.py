@@ -5,12 +5,15 @@ from sqlalchemy.orm import Session
 # Internal imports
 from src.config.database import get_db
 from src.repository import AircraftRepository
-from src.schemas import (AircraftBaseSchema, AircraftDisplaySchema,
-                         AircraftUpdateSchema,
-                         InputAircraftPerformanceEnduranceSchema,
-                         InputAircraftPerformanceRangeSchema,
-                         OutputAircraftPerformanceEnduranceSchema,
-                         OutputAircraftPerformanceRangeSchema)
+from src.schemas import (
+    AircraftBaseSchema,
+    AircraftDisplaySchema,
+    AircraftUpdateSchema,
+    InputAircraftPerformanceEnduranceSchema,
+    InputAircraftPerformanceRangeSchema,
+    OutputAircraftPerformanceEnduranceSchema,
+    OutputAircraftPerformanceRangeSchema,
+)
 from src.use_cases.performance import Performance
 
 router = APIRouter(prefix="/aircrafts")
@@ -21,7 +24,9 @@ router = APIRouter(prefix="/aircrafts")
     response_model=list[AircraftDisplaySchema],
     status_code=status.HTTP_200_OK,
 )
-async def show_aircrafts(session: Session = Depends(get_db)) -> list[AircraftDisplaySchema]:
+async def show_aircrafts(
+    session: Session = Depends(get_db),
+) -> list[AircraftDisplaySchema]:
     """Shows all the Aircraft objects in the database.
 
     Arguments:
@@ -39,8 +44,7 @@ async def show_aircrafts(session: Session = Depends(get_db)) -> list[AircraftDis
     response_model=AircraftDisplaySchema,
     status_code=status.HTTP_201_CREATED,
 )
-def input_aircraft(aircraft: AircraftBaseSchema,
-                   session: Session = Depends(get_db)) -> AircraftDisplaySchema:
+def input_aircraft(aircraft: AircraftBaseSchema, session: Session = Depends(get_db)) -> AircraftDisplaySchema:
     """Adds an Aircraft object to the database.
 
     Arguments:
@@ -59,8 +63,11 @@ def input_aircraft(aircraft: AircraftBaseSchema,
     response_model=AircraftUpdateSchema,
     status_code=status.HTTP_200_OK,
 )
-def modify_aircraft(aircraft_id: int, aircraft: AircraftUpdateSchema,
-                    session: Session = Depends(get_db)) -> AircraftUpdateSchema:
+def modify_aircraft(
+    aircraft_id: int,
+    aircraft: AircraftUpdateSchema,
+    session: Session = Depends(get_db),
+) -> AircraftUpdateSchema:
     """Updates an Aircraft object in the database.
 
     Arguments:
@@ -99,12 +106,15 @@ def remove_aircraft(aircraft_id: int, session: Session = Depends(get_db)):
 
 @router.get(
     path="/performance/range/{}".format(
-        "/".join([f"{key}" for key in InputAircraftPerformanceRangeSchema.__dict__['__pydantic_fields__'].keys()])),
+        "/".join([f"{key}" for key in InputAircraftPerformanceRangeSchema.__dict__["__pydantic_fields__"].keys()])
+    ),
     response_model=OutputAircraftPerformanceRangeSchema,
     status_code=status.HTTP_200_OK,
 )
-def get_range(aircraft: InputAircraftPerformanceRangeSchema = Depends(),
-              session: Session = Depends(get_db)) -> OutputAircraftPerformanceRangeSchema:
+def get_range(
+    aircraft: InputAircraftPerformanceRangeSchema = Depends(),
+    session: Session = Depends(get_db),
+) -> OutputAircraftPerformanceRangeSchema:
     """Gets range of the aircraft based on the data given according to InputAircraftPerformanceSchema.
 
     Arguments:
@@ -120,12 +130,15 @@ def get_range(aircraft: InputAircraftPerformanceRangeSchema = Depends(),
 
 @router.get(
     path="/performance/endurance/{}".format(
-        "/".join([f"{key}" for key in InputAircraftPerformanceEnduranceSchema.__dict__['__pydantic_fields__'].keys()])),
+        "/".join([f"{key}" for key in InputAircraftPerformanceEnduranceSchema.__dict__["__pydantic_fields__"].keys()])
+    ),
     response_model=OutputAircraftPerformanceEnduranceSchema,
     status_code=status.HTTP_200_OK,
 )
-def get_endurance(aircraft: InputAircraftPerformanceEnduranceSchema = Depends(),
-                  session: Session = Depends(get_db)) -> OutputAircraftPerformanceEnduranceSchema:
+def get_endurance(
+    aircraft: InputAircraftPerformanceEnduranceSchema = Depends(),
+    session: Session = Depends(get_db),
+) -> OutputAircraftPerformanceEnduranceSchema:
     """Gets endurance of the aircraft based on the data given according to InputAircraftPerformanceEnduranceSchema.
 
     Arguments:

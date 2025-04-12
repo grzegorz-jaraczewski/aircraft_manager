@@ -1,14 +1,11 @@
 # Third party imports
-import os
-
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-load_dotenv(".env")
+from src.settings import load_settings
 
-engine = create_engine(os.getenv("DATABASE_URL"))
-connection = engine.connect()
+settings = load_settings()
+engine = create_engine(settings.database_url)
 
 SessionLocal = sessionmaker(autoflush=False, autocommit=False, bind=engine)
 
