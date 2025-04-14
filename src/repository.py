@@ -1,18 +1,28 @@
 # Third party imports
-import logging
 from typing import Dict, List
 
 from sqlalchemy import exists, select
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session, joinedload
 
+from src.exceptions import (
+    AircraftNotFoundError,
+    AircraftRepositoryError,
+    DatabaseIntegrityError,
+    InvalidDataError,
+)
+
 # Internal imports
 from src.models import Aircraft, AircraftData
-from src.schemas import (AircraftBaseSchema, AircraftDataUpdateSchema,
-                         AircraftDisplaySchema, AircraftUpdateSchema)
-from src.exceptions import DatabaseIntegrityError, InvalidDataError, AircraftNotFoundError, AircraftRepositoryError
+from src.schemas import (
+    AircraftBaseSchema,
+    AircraftDataUpdateSchema,
+    AircraftDisplaySchema,
+    AircraftUpdateSchema,
+)
+from src.settings import SingletonLogger
 
-logger = logging.getLogger(__name__)
+logger = SingletonLogger()
 
 
 class AircraftRepository:
@@ -74,8 +84,12 @@ class AircraftRepository:
             self.session.commit()
 
             logger.info("Aircraft added successfully.")
-            added_aircraft = self.session.query(Aircraft).options(
-                joinedload(Aircraft.aircraft_data)).order_by(Aircraft.aircraft_id.desc()).first()
+            added_aircraft = (
+                self.session.query(Aircraft)
+                .options(joinedload(Aircraft.aircraft_data))
+                .order_by(Aircraft.aircraft_id.desc())
+                .first()
+            )
 
             return AircraftDisplaySchema.model_validate(added_aircraft)
 
@@ -112,29 +126,32 @@ class AircraftRepository:
             Aircraft object based on the AircraftUpdateSchema.
         """
         if self.is_present(aircraft_id=aircraft_id):
-
             try:
-                ac_values = AircraftUpdateSchema(
-                    **kwargs).model_dump(exclude={"aircraft_data"}, exclude_none=True)
-                ac_data_values = AircraftDataUpdateSchema(
-                    **kwargs.get("aircraft_data", {})).model_dump(exclude_none=True)
+                ac_values = AircraftUpdateSchema(**kwargs).model_dump(exclude={"aircraft_data"}, exclude_none=True)
+                ac_data_values = AircraftDataUpdateSchema(**kwargs.get("aircraft_data", {})).model_dump(
+                    exclude_none=True
+                )
 
                 if not ac_values and not ac_data_values:
-                    raise InvalidDataError("No valid aircraft update data provided. "
-                                           "Ensure that at least one field is populated.")
+                    raise InvalidDataError(
+                        "No valid aircraft update data provided. Ensure that at least one field is populated."
+                    )
 
                 if ac_values:
-                    self.session.query(Aircraft).filter_by(
-                        aircraft_id=aircraft_id).update(values={**ac_values})
+                    self.session.query(Aircraft).filter_by(aircraft_id=aircraft_id).update(values={**ac_values})
 
                 if ac_data_values:
-                    self.session.query(AircraftData).filter_by(
-                        aircraft_id=aircraft_id).update(values={**ac_data_values})
+                    self.session.query(AircraftData).filter_by(aircraft_id=aircraft_id).update(
+                        values={**ac_data_values}
+                    )
 
                 self.session.commit()
                 self.session.close()
 
-                updated_aircraft = {**ac_values, "aircraft_data": {**ac_data_values}}
+                updated_aircraft = {
+                    **ac_values,
+                    "aircraft_data": {**ac_data_values},
+                }
                 logger.info(f"Aircraft with id {aircraft_id} updated successfully.")
 
                 return AircraftUpdateSchema.model_validate(updated_aircraft)

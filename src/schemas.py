@@ -5,11 +5,13 @@ from pydantic import BaseModel, ConfigDict, computed_field
 
 # Internal imports
 from src.models import AircraftType
+from src.router.weather_api import WeatherData
 
 
 # Aircraft Data class schemas
 class AircraftDataBaseSchema(BaseModel):
     """Base AircraftData class schema with all obligatory fields."""
+
     model_config = ConfigDict(from_attributes=True)
 
     fuel_consumption: float
@@ -33,6 +35,7 @@ class AircraftDataBaseSchema(BaseModel):
 
 class AircraftDataUpdateSchema(AircraftDataBaseSchema):
     """Update aircraft data schema with all optional fields IOT support POST and PATCH HTTP methods."""
+
     fuel_consumption: Optional[float] = None
     ceiling: Optional[float] = None
     weight: Optional[float] = None
@@ -44,6 +47,7 @@ class AircraftDataUpdateSchema(AircraftDataBaseSchema):
 # Aircraft class schemas
 class AircraftBaseSchema(BaseModel):
     """Base aircraft schema with all obligatory fields."""
+
     model_config = ConfigDict(from_attributes=True)
 
     name: str
@@ -55,6 +59,7 @@ class AircraftBaseSchema(BaseModel):
 
 class AircraftUpdateSchema(AircraftBaseSchema):
     """Update aircraft schema with all optional fields IOT support POST and PATCH HTTP methods."""
+
     name: Optional[str] = None
     manufacturer: Optional[str] = None
     aircraft_type: Optional[AircraftType] = None
@@ -64,21 +69,24 @@ class AircraftUpdateSchema(AircraftBaseSchema):
 
 class AircraftDisplaySchema(AircraftBaseSchema):
     """Adds 'aircraft_id' field to the 'AircraftBaseSchema' IOT display complete aircraft data from database."""
+
     aircraft_id: int
 
 
 class InputAircraftPerformanceRangeSchema(BaseModel):
     """Input Performance Range schema provides necessary data for maximum range calculation
     with cruise speed."""
+
     model_config = ConfigDict(from_attributes=True)
 
     aircraft_id: int
-    wind_speed: float
+    wind_speed: float = WeatherData.current_wind_speed
     fuel: float
 
 
 class OutputAircraftPerformanceRangeSchema(BaseModel):
     """Output Performance Range schema presents aircraft name and its maximum range."""
+
     model_config = ConfigDict(from_attributes=True)
 
     name: str
@@ -88,6 +96,7 @@ class OutputAircraftPerformanceRangeSchema(BaseModel):
 class InputAircraftPerformanceEnduranceSchema(BaseModel):
     """Input Performance Endurance schema provides aircraft_id and fuel amount to calculate maximum aircraft
     endurance."""
+
     model_config = ConfigDict(from_attributes=True)
 
     aircraft_id: int
@@ -97,6 +106,7 @@ class InputAircraftPerformanceEnduranceSchema(BaseModel):
 class OutputAircraftPerformanceEnduranceSchema(BaseModel):
     """Output Performance Endurance schema provides aircraft_id and fuel amount to calculate maximum aircraft
     endurance."""
+
     model_config = ConfigDict(from_attributes=True)
 
     name: str

@@ -16,9 +16,10 @@ from src.schemas import AircraftDisplaySchema, AircraftUpdateSchema
 load_dotenv(r"C:\PyCharm\Aircraft_Manager\src\.env.testing")
 
 engine = create_engine(
-    os.getenv("DATABASE_URL"),
+    os.getenv("TEST_DATABASE_URL"),
     connect_args={"check_same_thread": False},
-    poolclass=StaticPool)
+    poolclass=StaticPool,
+)
 
 Local_session = scoped_session(sessionmaker(bind=engine))
 
@@ -60,8 +61,8 @@ def load_data(db_session: Session) -> None:
             fuel=120,
             take_off_weight=870,
             max_speed=270,
-            cruise_speed=190
-        )
+            cruise_speed=190,
+        ),
     )
 
     db_session.add(aircraft)
@@ -129,7 +130,7 @@ def to_schema(aircraft: Aircraft) -> dict:
     """
     return {
         **aircraft.__dict__,
-        "aircraft_data": aircraft.aircraft_data.__dict__
+        "aircraft_data": aircraft.aircraft_data.__dict__,
     }
 
 
@@ -158,8 +159,8 @@ def new_aircraft_fixture(create_aircraft) -> AircraftDisplaySchema:
             fuel=150,
             take_off_weight=1020,
             max_speed=270,
-            cruise_speed=210
-        )
+            cruise_speed=210,
+        ),
     )
 
     return AircraftDisplaySchema(**to_schema(aircraft))
@@ -185,8 +186,8 @@ def update_aircraft() -> AircraftUpdateSchema:
             fuel=120,
             take_off_weight=870,
             max_speed=270,
-            cruise_speed=170
-        )
+            cruise_speed=170,
+        ),
     )
 
     return AircraftUpdateSchema(**to_schema(aircraft))
@@ -208,6 +209,6 @@ def create_aircraft(**kwargs) -> Aircraft:
             fuel=kwargs.get("fuel"),
             take_off_weight=kwargs.get("take_off_weight"),
             max_speed=kwargs.get("max_speed"),
-            cruise_speed=kwargs.get("cruise_speed")
-        )
+            cruise_speed=kwargs.get("cruise_speed"),
+        ),
     )
