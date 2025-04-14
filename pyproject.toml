@@ -1,0 +1,50 @@
+[tool.poetry]
+name = "aircraft-manager"
+version = "0.1.0"
+description = ""
+authors = ["Greg <100309099+Greg75@users.noreply.github.com>"]
+readme = "README.md"
+packages = [
+    { include = "src" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+httpx = "^0.28.1"
+fastapi = "^0.115.6"
+sqlalchemy = "^2.0.37"
+uvicorn = "^0.34.0"
+python-dotenv = "^1.0.1"
+psycopg = {extras = ["binary"], version = "^3.2.4"}
+pydantic = "^2.10.6"
+alembic = "^1.14.1"
+flake8 = "^7.1.1"
+black = "^25.1.0"
+pydantic-settings = "^2.7.1"
+requests = "^2.32.3"
+python-dateutil = "^2.9.0.post0"
+ruff = "^0.11.2"
+pre-commit = "^4.2.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-cov = "^6.0.0"
+pytest-env = "^1.1.5"
+pytest-mock = "^3.14.0"
+pytest-timeout = "^2.3.1"
+pytest-dotenv = "^0.5.2"
+isort = "^6.0.0"
+
+
+[tool.ruff]
+line-length = 120
+
+
+[tool.ruff.lint]
+select = ["I"]
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
