@@ -11,6 +11,7 @@ from pydantic_settings import BaseSettings
 
 # Internal imports
 from src.config.database import engine
+from src.exceptions import DatabaseConnectionError
 from src.router.api import router as router_aircraft
 from src.utils.init_db import create_tables
 
@@ -38,6 +39,7 @@ async def lifespan(fastapp: FastAPI):
             await engine.dispose()
         except Exception as e:
             logger.error(f"Failed to close database connection: {e}.")
+            raise DatabaseConnectionError(status_code=503, message=str(e))
 
 
 app = FastAPI()
