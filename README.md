@@ -20,7 +20,7 @@ This repository contains a FastAPI application for managing aircraft data. The a
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/Greg75/aircraft_manager.git
+    git clone https://github.com/grzegorz-jaraczewski/aircraft_manager.git
     cd aircraft_manager
     ```
 
